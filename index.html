@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Zombie Miner Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-primary: #0f0f0f;
+        --bg-secondary: #1a1a1a;
+        --bg-card: #1e1e1e;
+        --bg-hover: #2a2a2a;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --accent-primary: #00ff41;
+        --accent-secondary: #00cc33;
+        --accent-danger: #ff4757;
+        --border-radius: 16px;
+        --border-radius-sm: 12px;
+        --shadow: 0 8px 32px rgba(0, 255, 65, 0.15);
+        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: radial-gradient(ellipse at top, var(--bg-primary), var(--bg-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        color: var(--text-primary);
+        overflow-x: hidden;
+      }
+
+      .calc {
+        width: 100%;
+        max-width: 480px;
+        background: var(--bg-card);
+        padding: 24px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 255, 65, 0.1);
+        position: relative;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .title {
+        font-size: 22px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+
+      .suffix-counter {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .control-btn {
+        background: var(--bg-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+        font-weight: 500;
+      }
+
+      .control-btn:hover {
+        background: var(--bg-hover);
+        color: var(--accent-primary);
+        border-color: var(--accent-primary);
+      }
+
+      .screen-container {
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      .error-message {
+        position: absolute;
+        top: -25px;
+        left: 0;
+        right: 0;
+        background: var(--accent-danger);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .error-message.show {
+        opacity: 1;
+      }
+
+      .history-panel {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-sm);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 10;
+        display: none;
+        margin-top: 4px;
+      }
+
+      .history-panel.show {
+        display: block;
+      }
+
+      .history-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 12px;
+      }
+
+      .history-item:hover {
+        background: var(--bg-hover);
+      }
+
+      .history-item:last-child {
+        border-bottom: none;
+      }
+
+      .screen {
+        background: linear-gradient(135deg, #000, #0a0a0a);
+        color: var(--accent-primary);
+        padding: 16px;
+        border-radius: var(--border-radius-sm);
+        font-size: 24px;
+        font-weight: 500;
+        text-align: right;
+        letter-spacing: 0.5px;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border: 1px solid rgba(0, 255, 65, 0.2);
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+        font-family: 'Courier New', monospace;
+        overflow: hidden;
+        position: relative;
+        word-break: break-all;
+      }
+
+      .shake {
+        animation: shake 0.5s ease-in-out;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      button {
+        padding: 16px;
+        font-size: 16px;
+        border-radius: var(--border-radius-sm);
+        border: none;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: var(--transition);
+        font-weight: 500;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button:active {
+        transform: scale(0.95);
+      }
+
+      button:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+      }
+
+      .op {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        color: #000;
+        font-weight: 600;
+      }
+
+      .op:hover {
+        background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+      }
+
+      .clear {
+        background: linear-gradient(135deg, var(--accent-danger), #c0392b);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .suffix-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        margin-bottom: 12px;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .suffix-grid button {
+        padding: 10px 6px;
+        font-size: 12px;
+        background: var(--bg-secondary);
+        border: 1px solid transparent;
+        transition: var(--transition);
+      }
+
+      .suffix-grid button:hover {
+        background: var(--bg-hover);
+        border-color: var(--accent-primary);
+      }
+
+      .sel {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+        color: #000 !important;
+        border-color: var(--accent-primary) !important;
+        font-weight: 600;
+        box-shadow: 0 0 12px rgba(0, 255, 65, 0.3);
+      }
+
+      .notes {
+        text-align: center;
+        margin-top: 12px;
+      }
+
+      .note {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 6px;
+        opacity: 0.8;
+        line-height: 1.4;
+      }
+
+      .note.highlight {
+        color: var(--accent-primary);
+        opacity: 1;
+        font-weight: 500;
+      }
+
+      /* Mobile Optimizations */
+      @media (max-width: 480px) {
+        .calc {
+          padding: 20px;
+          margin: 10px;
+          max-width: 100%;
+        }
+        
+        .title {
+          font-size: 20px;
+        }
+        
+        .screen {
+          font-size: 20px;
+          padding: 14px;
+          min-height: 48px;
+        }
+        
+        button {
+          padding: 14px;
+          font-size: 14px;
+        }
+        
+        .suffix-grid {
+          grid-template-columns: repeat(4, 1fr);
+          max-height: 120px;
+        }
+        
+        .controls {
+          justify-content: center;
+        }
+        
+        .control-btn {
+          font-size: 11px;
+          padding: 6px 10px;
+        }
+      }
+
+      /* Extended suffix grid for larger range */
+      @media (max-width: 360px) {
+        .suffix-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      /* Scrollbar styling */
+      .suffix-grid::-webkit-scrollbar,
+      .history-panel::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .suffix-grid::-webkit-scrollbar-track,
+      .history-panel::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: 2px;
+      }
+
+      .suffix-grid::-webkit-scrollbar-thumb,
+      .history-panel::-webkit-scrollbar-thumb {
+        background: var(--accent-primary);
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calc">
+      <div class="header">
+        <h1 class="title">Zombie Miner Calculator</h1>
+        <div class="suffix-counter">Suffixes: K, M, B, T, AA → BZ (Complete Range)</div>
+      </div>
+
+      <div class="controls">
+        <button class="control-btn" onclick="toggleHistory()" title="Show/hide history">
+          📋 History (<span id="historyCount">0</span>)
+        </button>
+        <button class="control-btn" onclick="clearHistory()" title="Clear history">
+          🗑️ Clear Hist
+        </button>
+        <button class="control-btn" onclick="undo()" title="Undo last action">
+          ↶ Undo
+        </button>
+      </div>
+
+      <div class="screen-container">
+        <div class="error-message" id="errorMessage"></div>
+        <div id="screen" class="screen">0</div>
+        <div class="history-panel" id="historyPanel"></div>
+      </div>
+
+      <div class="grid">
+        <button onclick="press('7')">7</button>
+        <button onclick="press('8')">8</button>
+        <button onclick="press('9')">9</button>
+        <button class="op" onclick="startMult()">×</button>
+
+        <button onclick="press('4')">4</button>
+        <button onclick="press('5')">5</button>
+        <button onclick="press('6')">6</button>
+        <button class="op" onclick="calculate()">=</button>
+
+        <button onclick="press('1')">1</button>
+        <button onclick="press('2')">2</button>
+        <button onclick="press('3')">3</button>
+        <button class="clear" onclick="clearAll()">CLEAR</button>
+
+        <button onclick="press('0')">0</button>
+        <button onclick="press('.')">.</button>
+        <button onclick="backspace()">⌫</button>
+        <div></div>
+      </div>
+
+      <button onclick="backspace()" style="width: 100%; margin-bottom: 12px;">⌫ Backspace</button>
+
+      <div class="suffix-grid" id="suffixGrid"></div>
+      
+      <div class="notes">
+        <div class="note highlight">Enter number → Select suffix → Multiply</div>
+        <div class="note">Complete suffix range: K, M, B, T, AA → BZ (108 total suffixes)</div>
+        <div class="note">History: 📋 Track calculations | Undo: ↶ Reverse actions</div>
+      </div>
+    </div>
+
+    <script>
+      // Enhanced state management
+      const screen = document.getElementById("screen");
+      const errorMessage = document.getElementById("errorMessage");
+      const historyPanel = document.getElementById("historyPanel");
+      const historyCount = document.getElementById("historyCount");
+
+      let baseNum = "";
+      let suffix = "";
+      let mult = "";
+      let mode = "base";
+      let history = [];
+      let undoStack = [];
+
+      // Error handling system
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+        screen.classList.add('shake');
+        
+        setTimeout(() => {
+          errorMessage.classList.remove('show');
+          screen.classList.remove('shake');
+        }, 3000);
+      }
+
+      function saveState() {
+        undoStack.push({
+          baseNum,
+          suffix,
+          mult,
+          mode
+        });
+        
+        if (undoStack.length > 10) {
+          undoStack.shift();
+        }
+      }
+
+      function undo() {
+        if (undoStack.length > 0) {
+          const state = undoStack.pop();
+          baseNum = state.baseNum;
+          suffix = state.suffix;
+          mult = state.mult;
+          mode = state.mode;
+          updateScreen();
+        } else {
+          showError("Nothing to undo");
+        }
+      }
+
+      // Enhanced screen update
+      function updateScreen() {
+        let display = "";
+        
+        if (mode === "base") {
+          display = baseNum || "0";
+          if (suffix) display += suffix;
+        } else {
+          display = baseNum || "0";
+          if (suffix) display += suffix;
+          display += " × ";
+          if (mult) display += mult;
+        }
+        
+        screen.textContent = display;
+      }
+
+      // Enhanced input handling
+      function press(d) {
+        saveState();
+        
+        if (mode === "base") {
+          if (d === "." && baseNum.includes(".")) {
+            showError("Number already contains decimal point");
+            return;
+          }
+          if (d === "0" && baseNum === "0") return;
+          if (baseNum === "0" && d !== ".") baseNum = d;
+          else baseNum += d;
+          
+          if (baseNum.length > 15) {
+            showError("Number too large");
+            baseNum = baseNum.slice(0, 15);
+          }
+        } else {
+          if (d === "." && mult.includes(".")) {
+            showError("Multiplier already contains decimal point");
+            return;
+          }
+          if (mult === "0" && d === "0") return;
+          if (mult === "0" && d !== ".") mult = d;
+          else mult += d;
+          
+          if (mult.length > 15) {
+            showError("Multiplier too large");
+            mult = mult.slice(0, 15);
+          }
+        }
+        updateScreen();
+      }
+
+      function backspace() {
+        saveState();
+        
+        if (mode === "base") {
+          baseNum = baseNum.slice(0, -1);
+          if (baseNum === "") baseNum = "";
+        } else {
+          mult = mult.slice(0, -1);
+        }
+        updateScreen();
+      }
+
+      function clearAll() {
+        saveState();
+        baseNum = "";
+        suffix = "";
+        mult = "";
+        mode = "base";
+        Array.from(suffixGrid.children).forEach((b) =>
+          b.classList.remove("sel")
+        );
+        updateScreen();
+      }
+
+      // EXTENDED SUFFIX SYSTEM - Now goes to BZ!
+      const suffixGrid = document.getElementById("suffixGrid");
+      const primary = ["K", "M", "B", "T"];
+      
+      // Add primary suffixes
+      primary.forEach((s) => {
+        const btn = document.createElement("button");
+        btn.textContent = s;
+        btn.onclick = () => applySuffix(s);
+        suffixGrid.appendChild(btn);
+      });
+
+      // Generate AA through BZ
+      const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      
+      // AA through AZ (26 suffixes)
+      for (let i = 0; i < 26; i++) {
+        const s = "A" + A[i];
+        const btn = document.createElement("button");
+        btn.textContent = s;
+        btn.onclick = () => applySuffix(s);
+        suffixGrid.appendChild(btn);
+      }
+      
+      // BA through BZ (26 more suffixes)
+      for (let i = 0; i < 26; i++) {
+        const s = "B" + A[i];
+        const btn = document.createElement("button");
+        btn.textContent = s;
+        btn.onclick = () => applySuffix(s);
+        suffixGrid.appendChild(btn);
+      }
+
+      function applySuffix(s) {
+        if (!baseNum) {
+          showError("Please enter a number first");
+          return;
+        }
+        saveState();
+        suffix = s;
+        
+        Array.from(suffixGrid.children).forEach((b) =>
+          b.classList.toggle("sel", b.textContent === s)
+        );
+        updateScreen();
+      }
+
+      function startMult() {
+        if (!baseNum || !suffix) {
+          showError("Please enter number and suffix first");
+          return;
+        }
+        saveState();
+        mode = "mult";
+        updateScreen();
+      }
+
+      // History functions
+      function addToHistory(input, result) {
+        const item = {
+          input,
+          result,
+          timestamp: new Date().toLocaleTimeString()
+        };
+        
+        history.unshift(item);
+        if (history.length > 20) history.pop();
+        
+        updateHistoryDisplay();
+        saveHistoryToLocal();
+      }
+
+      function updateHistoryDisplay() {
+        historyCount.textContent = history.length;
+        historyPanel.innerHTML = "";
+        
+        if (history.length === 0) {
+          historyPanel.innerHTML = '<div class="history-item">No history yet</div>';
+          return;
+        }
+        
+        history.forEach((item, index) => {
+          const div = document.createElement('div');
+          div.className = 'history-item';
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 500;">${item.input}</div>
+                <div style="font-size: 10px; color: var(--text-secondary);">${item.timestamp}</div>
+              </div>
+              <div style="font-weight: 600; color: var(--accent-primary);">${item.result}</div>
+            </div>
+          `;
+          div.onclick = () => loadFromHistory(index);
+          historyPanel.appendChild(div);
+        });
+      }
+
+      function loadFromHistory(index) {
+        const item = history[index];
+        const match = item.result.match(/^([0-9.,]+)([A-Z]*)$/i);
+        if (match) {
+          saveState();
+          baseNum = parseFloat(match[1]).toString();
+          suffix = match[2] || "";
+          mode = "base";
+          
+          Array.from(suffixGrid.children).forEach((b) =>
+            b.classList.toggle("sel", b.textContent === suffix)
+          );
+          updateScreen();
+          toggleHistory();
+        }
+      }
+
+      function toggleHistory() {
+        historyPanel.classList.toggle('show');
+      }
+
+      function clearHistory() {
+        history = [];
+        updateHistoryDisplay();
+        saveHistoryToLocal();
+        showError("History cleared");
+      }
+
+      // EXTENDED CALCULATION SYSTEM - Supports up to BZ!
+      const SCALES = (function () {
+        const arr = ["", "K", "M", "B", "T"];
+        const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        
+        // AA through AZ
+        for (let i = 0; i < 26; i++) {
+          arr.push("A" + A[i]);
+        }
+        
+        // BA through BZ
+        for (let i = 0; i < 26; i++) {
+          arr.push("B" + A[i]);
+        }
+        
+        return arr;
+      })();
+
+      function parseScaled(numStr, suf) {
+        const num = parseFloat(numStr) || 0;
+        const p = SCALES.indexOf(suf);
+        const factor = p >= 0 ? Math.pow(1000, p) : 1;
+        return num * factor;
+      }
+
+      function formatScaled(val) {
+        if (val === 0) return "0";
+        
+        let p = 0;
+        const isNegative = val < 0;
+        val = Math.abs(val);
+        
+        while (val >= 1000 && p < SCALES.length - 1) {
+          val /= 1000;
+          p++;
+        }
+        
+        const formatted = val.toFixed(2);
+        return (isNegative ? "-" : "") + parseFloat(formatted) + SCALES[p];
+      }
+
+      function calculate() {
+        if (!baseNum || !suffix || !mult) {
+          showError("Please complete the calculation");
+          return;
+        }
+        
+        screen.classList.add('shake');
+        
+        try {
+          const left = parseScaled(baseNum, suffix);
+          const right = parseFloat(mult);
+          
+          if (right === 0) {
+            showError("Cannot multiply by zero");
+            return;
+          }
+          
+          let result = left * right;
+          
+          if (!isFinite(result)) {
+            showError("Calculation result is invalid");
+            return;
+          }
+          
+          const formatted = formatScaled(result);
+          
+          // Add to history
+          addToHistory(
+            `${baseNum}${suffix} × ${mult}`,
+            formatted
+          );
+          
+          // Parse result
+          const match = formatted.match(/^([0-9.,]+)([A-Z]*)$/i);
+          if (match) {
+            saveState();
+            baseNum = parseFloat(match[1]).toString();
+            suffix = match[2] || "";
+            mult = "";
+            mode = "base";
+            
+            Array.from(suffixGrid.children).forEach((b) =>
+              b.classList.toggle("sel", b.textContent === suffix)
+            );
+            
+            updateScreen();
+          }
+        } catch (error) {
+          showError("Calculation error occurred");
+        } finally {
+          screen.classList.remove('shake');
+        }
+      }
+
+      // Local storage
+      function saveHistoryToLocal() {
+        try {
+          localStorage.setItem('zombieCalcHistory', JSON.stringify(history));
+        } catch (e) {
+          console.warn('Could not save history to localStorage');
+        }
+      }
+
+      function loadHistoryFromLocal() {
+        try {
+          const saved = localStorage.getItem('zombieCalcHistory');
+          if (saved) {
+            history = JSON.parse(saved);
+            updateHistoryDisplay();
+          }
+        } catch (e) {
+          console.warn('Could not load history from localStorage');
+        }
+      }
+
+      // Keyboard support
+      document.addEventListener('keydown', (e) => {
+        e.preventDefault();
+        
+        if (e.key >= '0' && e.key <= '9') press(e.key);
+        if (e.key === '.') press('.');
+        if (e.key === 'Backspace') backspace();
+        if (e.key === 'Escape') clearAll();
+        if (e.key === 'Enter' || e.key === '=') calculate();
+        if (e.key === '*') startMult();
+        if (e.ctrlKey && e.key === 'z') undo();
+      });
+
+      // Initialize
+      loadHistoryFromLocal();
+      updateScreen();
+
+      // Auto-save functionality
+      setInterval(() => {
+        if (history.length > 0) {
+          saveHistoryToLocal();
+        }
+      }, 30000);
+
+      // Log the complete suffix range for verification
+      console.log("Complete suffix range:", SCALES.slice(1)); // Skip empty string
+      console.log("Total suffixes:", SCALES.length - 1); // Should be 108
+    </script>
+  </body>
+</html>
